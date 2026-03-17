@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Pomodoro</title>
+</head>
+<body>
+
+    <!-- 時間表示 -->
+    <h1 id="timer">25:00</h1>
+
+    <!-- ボタンを押したら、JSの関数を呼び出す -->
+    <button onclick="startTimer()">スタート</button>
+    <button onclick="stopTimer()">ストップ</button>
+    <button onclick="resetTimer()">リセット</button>
+
+    <br>
+    <button onclick="setTime(1500)">25分</button>
+    <button onclick="setTime(900)">15分</button>
+    <button onclick="setTime(300)">5分</button>
+    <br>
+    <input type="number" id="customMinutes" placeholder="分を入力">
+    <button onclick="setCustomTime()">設定</button>
+
+    <script>
+        let time = 1500; // 25分（残り時間）
+        let interval = null; // 動作中かどうか
+
+        // 表示更新
+        function updateDisplay() {
+            let minutes = Math.floor(time / 60); // 分に変換
+            let seconds = time % 60; // 秒の余り
+
+            // HTMLを書き換える
+            document.getElementById("timer").textContent = 
+                String(minutes).padStart(2, '0') + ":" +
+                String(seconds).padStart(2, '0');
+        }
+
+        // スタート処理
+        function startTimer() {
+            if (interval) return; // 多重起動を防ぐ
+
+            interval = setInterval(() => {
+                if (time > 0) {
+                    time--;
+                    updateDisplay();
+                } else {
+                    clearInterval(interval);
+                    interval = null;
+                    alert("強制終了します。");
+                }
+            }, 1000); // 1000ミリ秒ごとに処理を繰り返す
+        }
+
+        // ストップ処理
+        function stopTimer() {
+            clearInterval(interval);
+            interval = null;
+        }
+
+        // リセット処理
+        function resetTimer() {
+            clearInterval(interval);
+            interval = null;
+            time = 1500;
+            updateDisplay();
+        }
+
+        // 時間指定
+        function setTime(newTime) {
+            clearInterval(interval); // タイマーを止める
+            interval = null;
+            time = newTime; // 新しい時間に変更
+            updateDisplay(); // 表示更新
+        }
+
+        function setCustomTime() {
+            let minutes = document.getElementById("customMinutes").value;
+
+            let seconds = minutes * 60;
+
+            clearInterval(interval);
+            interval = null;
+
+            time = seconds;
+            updateDisplay();
+        }
+
+
+        // 初期表示
+        updateDisplay();
+    </script>
+
+</body>
+</html>
