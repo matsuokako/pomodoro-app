@@ -3,266 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>Pomodoro</title>
-
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sens-serif;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        /* バーの背景 */
-        #progressContainer {
-            width: 100%;
-            background-color: #ddd;
-            border-radius: 10px;
-            height: 20px;
-            margin: 20px 0;
-        }
-
-        /* 実際のバー */
-        #progressBar {
-            height: 100%;
-            width: 100%;
-            background-color: #4CAF50;
-            border-radius: 10px;
-            transition: width 0.1s linear; /* 滑らかに動かせる */
-        }
-
-        #timer {
-            font-size: 70px;
-            margin: 10px 0;
-        }
-
-        #mode {
-            font-size: 20px;
-            color: #666;
-            margin-bottom: 20px;
-        }
-
-        #timeSelect {
-            font-size: 20px;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        #timeSelectButton {
-            padding: 10px 20px;
-            margin: 5px;
-            width: 100px;
-            font-size: 12px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #4c7daf;
-            color: white;
-            text-align: center;
-        }
-
-        #timeSelectButton:hover {
-            background-color: #3d4c91;
-        }
-
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            width: 110px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 5px;
-            background-color: #4c7daf;
-            color: white;
-            text-align: center;
-        }
-
-        button:hover {
-            background-color: #3d4c91;
-        }
-
-        input {
-            padding: 8px;
-            margin: 5px;
-            font-size: 16px;
-            width: 80px;
-            text-align: center;
-        }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        <!-- 時間表示 -->
-        <h1 id="timer">25:00</h1>
-        <div id="progressContainer">
-            <div id="progressBar"></div>
-        </div>
-        <h2 id="mode">作業中</h2>
-
-        <!-- ボタンを押したら、JSの関数を呼び出す -->
-        <button onclick="startTimer()">スタート</button>
-        <button onclick="stopTimer()">ストップ</button>
-        <button onclick="resetTimer()">リセット</button>
-
-        <br>
-        <p id="timeSelect">作業時間（分）</p>
-        <input type="number" id="workMinutes" value="25">
-
-        <p id="timeSelect">休憩時間（分）</p>
-        <input type="number" id="breakMinutes" value="5">
-
-        <br>
-        <button onclick="setDurations()" id="timeSelectButton">時間を指定</button>
+<div class="container">
+    <!-- 時間表示 -->
+    <h1 id="timer">25:00</h1>
+    <div id="progressContainer">
+        <div id="progressBar"></div>
     </div>
+    <h2 id="mode">作業中</h2>
 
-    <script>
-        let workMinutes = 25;
-        let breakMinutes = 5;
-        let time = workMinutes * 60; // 25分（残り時間）
-        let totalTime = time; // 作業or休憩ごとに設定する
-        let isWorkTime = true; // true: 作業中, false: 休憩
-        let timerRunning = false;
-        let lastUpdate = Date.now();
-        let sound = new Audio("sei_ge_bell01.mp3");
+    <!-- ボタン -->
+    <button onclick="startTimer()">スタート</button>
+    <button onclick="stopTimer()">ストップ</button>
+    <button onclick="resetTimer()">リセット</button>
 
-        // 表示更新
-        function updateDisplay() {
-            let minutes = Math.floor(time / 60); // 分に変換
-            let seconds = Math.floor(time % 60); // 秒
+    <br>
+    <p id="timeSelect">作業時間（分）</p>
+    <input type="number" id="workMinutes" value="25">
 
-            // HTMLを書き換える
-            document.getElementById("timer").textContent = 
-                String(minutes).padStart(2, '0') + ":" +
-                String(seconds).padStart(2, '0');
-        }
+    <p id="timeSelect">休憩時間（分）</p>
+    <input type="number" id="breakMinutes" value="5">
 
-        function updateMode() {
-            if (isWorkTime) {
-                document.getElementById("mode").textContent = "作業中";
-            } else {
-                document.getElementById("mode").textContent = "休憩中";
-            }
-        }
+    <br>
+    <button onclick="setDurations()" id="timeSelectButton">時間を指定</button>
+</div>
 
-        function updateProgressBar() {
-            let percent = (time / totalTime) * 100;
-            let bar = document.getElementById("progressBar");
-            bar.style.width = percent + "%";
-            bar.style.backgroundColor = isWorkTime ? "#4CAF50" : "#2196F3"; // 青と緑を切り替える 
-        }
-
-        function timeLoop() {
-            if (!timerRunning) return;
-
-            let now = Date.now();
-            let delta = (now - lastUpdate) / 1000; // 秒単位
-            lastUpdate = now;
-
-            time -= delta; // 小数でバーを減少させていく
-            if (time <= 0) {
-                time = 0;
-                updateDisplay();
-                updateProgressBar();
-                sound.play();
-                handleSwitch(); // 作業, 休憩の切り替えをする
-                return;
-            }
-
-            updateDisplay();
-            updateProgressBar();
-            requestAnimationFrame(timeLoop);
-        }
-
-        // スタート処理
-        function startTimer() {
-            if (timerRunning) return; // 多重起動を防ぐ
-
-            lastUpdate = Date.now();
-            timerRunning = true;
-            requestAnimationFrame(timeLoop);
-        }
-
-        // ストップ処理
-        function stopTimer() {
-            timerRunning = false;
-        }
-
-        // リセット処理
-        function resetTimer() {
-            timerRunning = false;
-            isWorkTime = true;
-            time = workMinutes * 60;
-            totalTime = time;
-            updateDisplay();
-            updateMode();
-            updateProgressBar();
-        }
-
-        // 時間指定
-        function setDurations() {
-            let work = document.getElementById("workMinutes").value;
-            let rest = document.getElementById("breakMinutes").value;
-
-            if (work <= 0 || rest <= 0) {
-                alert("正しい時間を入力してください。");
-                return;
-            }
-
-            workMinutes = work;
-            breakMinutes = rest;
-
-            // 作業状態に戻す
-            isWorkTime = true;
-            time = workMinutes * 60;
-            totalTime = time;
-
-            timerRunning = false;
-
-            lastUpdate = Date.now();
-            updateDisplay();
-            updateMode();
-            updateProgressBar();
-        }
-
-        function handleSwitch() {
-            if (isWorkTime) {
-                //alert("作業終了！休憩に入ります。");
-                isWorkTime = false;
-                time = breakMinutes * 60;
-                totalTime = time;
-            } else {
-                //alert("休憩終了！作業に入ります。");
-                isWorkTime = true;
-                time = workMinutes * 60;
-                totalTime = time;
-            }
-
-            timerRunning = false;
-            updateDisplay();
-            updateMode();
-            updateProgressBar();
-        }
-
-        // 初期表示
-        updateDisplay();
-        updateProgressBar();
-        updateMode();
-    </script>
-
+<script src="script.js"></script>
 </body>
 </html>
