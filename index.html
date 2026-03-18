@@ -133,94 +133,22 @@
     <script>
         let workMinutes = 25;
         let breakMinutes = 5;
-        let time = 1500; // 25分（残り時間）
-        let interval = null; // 動作中かどうか
+        let time = workMinutes * 60; // 25分（残り時間）
+        let totalTime = time; // 作業or休憩ごとに設定する
         let isWorkTime = true; // true: 作業中, false: 休憩
-        let totalTime = workMinutes * 60; // 作業or休憩ごとに設定する
+        let timerRunning = false;
+        let lastUpdate = Date.now();
         let sound = new Audio("sei_ge_bell01.mp3");
 
         // 表示更新
         function updateDisplay() {
             let minutes = Math.floor(time / 60); // 分に変換
-            let seconds = time % 60; // 秒の余り
+            let seconds = Math.floor(time % 60); // 秒
 
             // HTMLを書き換える
             document.getElementById("timer").textContent = 
                 String(minutes).padStart(2, '0') + ":" +
                 String(seconds).padStart(2, '0');
-        }
-
-        // スタート処理
-        function startTimer() {
-            if (interval) return; // 多重起動を防ぐ
-
-            interval = setInterval(() => {
-                if (time > 0) {
-                    time--;
-                    updateDisplay();
-                    updateProgressBar();
-                } else {
-                    clearInterval(interval);
-                    interval = null;
-
-                    sound.play();
-
-                    if (isWorkTime) {
-                        alert("作業終了！休憩に入ります。");
-                        time = breakMinutes * 60; // 5分休憩
-                        isWorkTime = false;
-                        totalTime = breakMinutes * 60;
-                    } else {
-                        alert("休憩終了！作業に入ります。");
-                        time = workMinutes * 60; // 25分作業
-                        isWorkTime = true;
-                        totalTime = workMinutes * 60;
-                    }
-
-                    updateMode();
-                    updateDisplay();
-                    updateProgressBar();
-                    startTimer(); // 自動で次を開始する
-                }
-            }, 1000); // 1000ミリ秒ごとに処理を繰り返す
-        }
-
-        // ストップ処理
-        function stopTimer() {
-            clearInterval(interval);
-            interval = null;
-        }
-
-        // リセット処理
-        function resetTimer() {
-            clearInterval(interval);
-            interval = null;
-            time = workMinutes * 60;
-            isWorkTime = true;
-            totalTime = workMinutes * 60;
-            updateDisplay();
-            updateMode();
-            updateProgressBar();
-        }
-
-        // 時間指定(旧)
-        function setTime(newTime) {
-            clearInterval(interval); // タイマーを止める
-            interval = null;
-            time = newTime; // 新しい時間に変更
-            updateDisplay(); // 表示更新
-        }
-
-        function setCustomTime() {
-            let minutes = document.getElementById("customMinutes").value;
-
-            let seconds = minutes * 60;
-
-            clearInterval(interval);
-            interval = null;
-
-            time = seconds;
-            updateDisplay();
         }
 
         function updateMode() {
@@ -229,6 +157,59 @@
             } else {
                 document.getElementById("mode").textContent = "休憩中";
             }
+        }
+
+        function updateProgressBar() {
+            let percent = (time / totalTime) * 100;
+            let bar = document.getElementById("progressBar");
+            bar.style.width = percent + "%";
+            bar.style.backgroundColor = isWorkTime ? "#4CAF50" : "#2196F3"; // 青と緑を切り替える 
+        }
+
+        function timeLoop() {
+            if (!timerRunning) return;
+
+            let now = Date.now();
+            let delta = (now - lastUpdate) / 1000; // 秒単位
+            lastUpdate = now;
+
+            time -= delta; // 小数でバーを減少させていく
+            if (time <= 0) {
+                time = 0;
+                updateDisplay();
+                updateProgressBar();
+                sound.play();
+                handleSwitch(); // 作業, 休憩の切り替えをする
+                return;
+            }
+
+            updateDisplay();
+            updateProgressBar();
+            requestAnimationFrame(timeLoop);
+        }
+
+        // スタート処理
+        function startTimer() {
+            if (timerRunning) return; // 多重起動を防ぐ
+            timerRunning = true;
+            lastUpdate = Date.now();
+            requestAnimationFrame(timeLoop);
+        }
+
+        // ストップ処理
+        function stopTimer() {
+            timerRunning = false;
+        }
+
+        // リセット処理
+        function resetTimer() {
+            timerRunning = false;
+            isWorkTime = true;
+            time = workMinutes * 60;
+            totalTime = time;
+            updateDisplay();
+            updateMode();
+            updateProgressBar();
         }
 
         // 時間指定
@@ -247,21 +228,33 @@
             // 作業状態に戻す
             isWorkTime = true;
             time = workMinutes * 60;
-            totalTime = workMinutes * 60;
+            totalTime = time;
 
-            clearInterval(interval);
-            interval = null;
+            timerRunning = false;
 
             updateDisplay();
             updateMode();
             updateProgressBar();
         }
 
-        function updateProgressBar() {
-            let percent = (time / totalTime) * 100;
-            document.getElementById("progressBar").style.width = percent + "%";
-        }
+        function handleSwitch() {
+            if (isWorkTime) {
+                alert("作業終了！休憩に入ります。");
+                isWorkTime = false;
+                time = breakMinutes * 60;
+                totalTime = time;
+            } else {
+                alert("休憩終了！作業に入ります。");
+                isWorkTime = true;
+                time = workMinutes * 60;
+                totalTime = time;
+            }
 
+            updateDisplay();
+            updateMode();
+            updateProgressBar();
+            startTimer(); // 自動再スタート
+        }
 
         // 初期表示
         updateDisplay();
