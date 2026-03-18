@@ -23,6 +23,24 @@
             text-align: center;
         }
 
+        /* バーの背景 */
+        #progressContainer {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 10px;
+            height: 20px;
+            margin: 20px 0;
+        }
+
+        /* 実際のバー */
+        #progressBar {
+            height: 100%;
+            width: 100%;
+            background-color: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.1s linear; /* 滑らかに動かせる */
+        }
+
         #timer {
             font-size: 70px;
             margin: 10px 0;
@@ -91,6 +109,9 @@
     <div class="container">
         <!-- 時間表示 -->
         <h1 id="timer">25:00</h1>
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
         <h2 id="mode">作業中</h2>
 
         <!-- ボタンを押したら、JSの関数を呼び出す -->
@@ -115,6 +136,7 @@
         let time = 1500; // 25分（残り時間）
         let interval = null; // 動作中かどうか
         let isWorkTime = true; // true: 作業中, false: 休憩
+        let totalTime = workMinutes * 60; // 作業or休憩ごとに設定する
         let sound = new Audio("sei_ge_bell01.mp3");
 
         // 表示更新
@@ -136,6 +158,7 @@
                 if (time > 0) {
                     time--;
                     updateDisplay();
+                    updateProgressBar();
                 } else {
                     clearInterval(interval);
                     interval = null;
@@ -146,14 +169,17 @@
                         alert("作業終了！休憩に入ります。");
                         time = breakMinutes * 60; // 5分休憩
                         isWorkTime = false;
+                        totalTime = breakMinutes * 60;
                     } else {
                         alert("休憩終了！作業に入ります。");
                         time = workMinutes * 60; // 25分作業
                         isWorkTime = true;
+                        totalTime = workMinutes * 60;
                     }
 
                     updateMode();
                     updateDisplay();
+                    updateProgressBar();
                     startTimer(); // 自動で次を開始する
                 }
             }, 1000); // 1000ミリ秒ごとに処理を繰り返す
@@ -169,8 +195,12 @@
         function resetTimer() {
             clearInterval(interval);
             interval = null;
-            time = 1500;
+            time = workMinutes * 60;
+            isWorkTime = true;
+            totalTime = workMinutes * 60;
             updateDisplay();
+            updateMode();
+            updateProgressBar();
         }
 
         // 時間指定(旧)
@@ -217,17 +247,25 @@
             // 作業状態に戻す
             isWorkTime = true;
             time = workMinutes * 60;
+            totalTime = workMinutes * 60;
 
             clearInterval(interval);
             interval = null;
 
             updateDisplay();
             updateMode();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            let percent = (time / totalTime) * 100;
+            document.getElementById("progressBar").style.width = percent + "%";
         }
 
 
         // 初期表示
         updateDisplay();
+        updateProgressBar();
         updateMode();
     </script>
 
