@@ -3,28 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <title>Pomodoro</title>
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sens-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        #timer {
+            font-size: 70px;
+            margin: 10px 0;
+        }
+
+        #mode {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        #timeSelect {
+            font-size: 20px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        #timeSelectButton {
+            padding: 10px 20px;
+            margin: 5px;
+            width: 100px;
+            font-size: 12px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4c7daf;
+            color: white;
+            text-align: center;
+        }
+
+        #timeSelectButton:hover {
+            background-color: #3d4c91;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            width: 110px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4c7daf;
+            color: white;
+            text-align: center;
+        }
+
+        button:hover {
+            background-color: #3d4c91;
+        }
+
+        input {
+            padding: 8px;
+            margin: 5px;
+            font-size: 16px;
+            width: 80px;
+            text-align: center;
+        }
+
+    </style>
 </head>
 <body>
 
-    <!-- 時間表示 -->
-    <h1 id="timer">25:00</h1>
+    <div class="container">
+        <!-- 時間表示 -->
+        <h1 id="timer">25:00</h1>
+        <h2 id="mode">作業中</h2>
 
-    <!-- ボタンを押したら、JSの関数を呼び出す -->
-    <button onclick="startTimer()">スタート</button>
-    <button onclick="stopTimer()">ストップ</button>
-    <button onclick="resetTimer()">リセット</button>
+        <!-- ボタンを押したら、JSの関数を呼び出す -->
+        <button onclick="startTimer()">スタート</button>
+        <button onclick="stopTimer()">ストップ</button>
+        <button onclick="resetTimer()">リセット</button>
 
-    <br>
-    <button onclick="setTime(1500)">25分</button>
-    <button onclick="setTime(900)">15分</button>
-    <button onclick="setTime(300)">5分</button>
-    <br>
-    <input type="number" id="customMinutes" placeholder="分を入力">
-    <button onclick="setCustomTime()">設定</button>
+        <br>
+        <p id="timeSelect">作業時間（分）</p>
+        <input type="number" id="workMinutes" value="25">
+
+        <p id="timeSelect">休憩時間（分）</p>
+        <input type="number" id="breakMinutes" value="5">
+
+        <br>
+        <button onclick="setDurations()" id="timeSelectButton">時間を指定</button>
+    </div>
 
     <script>
+        let workMinutes = 25;
+        let breakMinutes = 5;
         let time = 1500; // 25分（残り時間）
         let interval = null; // 動作中かどうか
+        let isWorkTime = true; // true: 作業中, false: 休憩
+        let sound = new Audio("sei_ge_bell01.mp3");
 
         // 表示更新
         function updateDisplay() {
@@ -48,7 +139,22 @@
                 } else {
                     clearInterval(interval);
                     interval = null;
-                    alert("強制終了します。");
+
+                    sound.play();
+
+                    if (isWorkTime) {
+                        alert("作業終了！休憩に入ります。");
+                        time = breakMinutes * 60; // 5分休憩
+                        isWorkTime = false;
+                    } else {
+                        alert("休憩終了！作業に入ります。");
+                        time = workMinutes * 60; // 25分作業
+                        isWorkTime = true;
+                    }
+
+                    updateMode();
+                    updateDisplay();
+                    startTimer(); // 自動で次を開始する
                 }
             }, 1000); // 1000ミリ秒ごとに処理を繰り返す
         }
@@ -67,7 +173,7 @@
             updateDisplay();
         }
 
-        // 時間指定
+        // 時間指定(旧)
         function setTime(newTime) {
             clearInterval(interval); // タイマーを止める
             interval = null;
@@ -87,9 +193,42 @@
             updateDisplay();
         }
 
+        function updateMode() {
+            if (isWorkTime) {
+                document.getElementById("mode").textContent = "作業中";
+            } else {
+                document.getElementById("mode").textContent = "休憩中";
+            }
+        }
+
+        // 時間指定
+        function setDurations() {
+            let work = document.getElementById("workMinutes").value;
+            let rest = document.getElementById("breakMinutes").value;
+
+            if (work <= 0 || rest <= 0) {
+                alert("正しい時間を入力してください。");
+                return;
+            }
+
+            workMinutes = work;
+            breakMinutes = rest;
+
+            // 作業状態に戻す
+            isWorkTime = true;
+            time = workMinutes * 60;
+
+            clearInterval(interval);
+            interval = null;
+
+            updateDisplay();
+            updateMode();
+        }
+
 
         // 初期表示
         updateDisplay();
+        updateMode();
     </script>
 
 </body>
