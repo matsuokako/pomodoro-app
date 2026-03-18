@@ -191,8 +191,9 @@
         // スタート処理
         function startTimer() {
             if (timerRunning) return; // 多重起動を防ぐ
-            timerRunning = true;
+
             lastUpdate = Date.now();
+            timerRunning = true;
             requestAnimationFrame(timeLoop);
         }
 
@@ -232,6 +233,7 @@
 
             timerRunning = false;
 
+            lastUpdate = Date.now();
             updateDisplay();
             updateMode();
             updateProgressBar();
@@ -239,21 +241,21 @@
 
         function handleSwitch() {
             if (isWorkTime) {
-                alert("作業終了！休憩に入ります。");
+                //alert("作業終了！休憩に入ります。");
                 isWorkTime = false;
                 time = breakMinutes * 60;
                 totalTime = time;
             } else {
-                alert("休憩終了！作業に入ります。");
+                //alert("休憩終了！作業に入ります。");
                 isWorkTime = true;
                 time = workMinutes * 60;
                 totalTime = time;
             }
 
+            timerRunning = false;
             updateDisplay();
             updateMode();
             updateProgressBar();
-            startTimer(); // 自動再スタート
         }
 
         // 初期表示
